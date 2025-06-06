@@ -49,15 +49,21 @@ jobs:
         du -h target/x86_64-linux-android/release/test_runner
         du -h target/x86_64-linux-android/release/libboa_alignment_test.so
 
+    - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
     - name: Setup Android Emulator and run test
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 29
         arch: x86_64
         target: default
-        emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-        disable-animations: true
         script: |
+          ./gradlew connectedCheck
+          
           echo "=== Setting up test environment ==="
           
           # Push the test binary to emulator
