@@ -2,10 +2,12 @@ use boa_engine::{Context, Source};
 
 #[no_mangle]
 pub extern "C" fn test_boa_alignment() -> i32 {
-    // Minimal reproduction case
-    let mut context = Context::default();
+    test();
+    1
+}
 
-    // Try operations that might trigger the alignment issue
+fn test() {
+    let mut context = Context::default();
     let source = Source::from_bytes(
         "
         let obj = {};
@@ -19,11 +21,9 @@ pub extern "C" fn test_boa_alignment() -> i32 {
     match context.eval(source) {
         Ok(_) => {
             println!("Test passed");
-            0
         }
         Err(e) => {
             println!("Test failed: {}", e);
-            1
         }
     }
 }
