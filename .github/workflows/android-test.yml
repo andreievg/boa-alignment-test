@@ -1,35 +1,53 @@
 name: Android Alignment Test
 
-on: [push, pull_request]
+on: 
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
     
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
         override: true
+        components: rustfmt, clippy
         
     - name: Install cross
       run: cargo install cross --git https://github.com/cross-rs/cross
       
-    - name: Build Android ARM64 shared library
+    - name: Check formatting
+      run: cargo fmt -- --check
+      
+    - name: Run clippy
+      run: cargo clippy -- -D warnings
+      
+    - name: Build for Android ARM64 (library)
       run: cross build --target aarch64-linux-android --release --lib
       
-    - name: Build Android ARM64 test binary
+    - name: Build for Android ARM64 (binary)
       run: cross build --target aarch64-linux-android --release --bin test_runner
       
     - name: List built files
       run: |
-        echo "Built files:"
+        echo "=== Built files ==="
         ls -la target/aarch64-linux-android/release/
+        echo ""
+        echo "=== File info ==="
         file target/aarch64-linux-android/release/libboa_alignment_test.so
         file target/aarch64-linux-android/release/test_runner
+        echo ""
+        echo "=== Binary size ==="
+        du -h target/aarch64-linux-android/release/test_runner
+        du -h target/aarch64-linux-android/release/libboa_alignment_test.so
         
     - name: Setup Android Emulator and run test
       uses: reactivecircus/android-emulator-runner@v2
@@ -37,10 +55,49 @@ jobs:
         api-level: 29
         arch: arm64-v8a
         target: default
+        emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+        disable-animations: true
         script: |
+          echo "=== Setting up test environment ==="
+          
           # Push the test binary to emulator
           adb push target/aarch64-linux-android/release/test_runner /data/local/tmp/
-          adb push target/aarch64-linux-android/release/libboa_alignment_test.so /data/local/tmp/
           
-          # Run the test
-          adb shell "cd /data/local/tmp && chmod +x test_runner && LD_LIBRARY_PATH=. ./test_runner"
+          # Make it executable
+          adb shell "chmod +x /data/local/tmp/test_runner"
+          
+          echo "=== Running tests ==="
+          
+          # Run the test with environment variables for better debugging
+          adb shell "cd /data/local/tmp && RUST_BACKTRACE=full RUST_LOG=debug ./test_runner"
+          
+          echo "=== Test completed ==="
+
+  # Additional job to test on different Android API levels
+  test-multiple-apis:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        api-level: [26, 29, 30]
+    
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+    - name: Install cross
+      run: cargo install cross --git https://github.com/cross-rs/cross
+    - name: Build
+      run: cross build --target aarch64-linux-android --release --bin test_runner
+    - name: Test on API ${{ matrix.api-level }}
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: ${{ matrix.api-level }}
+        arch: arm64-v8a
+        target: default
+        emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+        disable-animations: true
+        script: |
+          adb push target/aarch64-linux-android/release/test_runner /data/local/tmp/
+          adb shell "chmod +x /data/local/tmp/test_runner && cd /data/local/tmp && ./test_runner"

@@ -5,4 +5,4 @@ passthrough = [
 ]
 
 [target.aarch64-linux-android]
-dockerfile = "Dockerfile.android"
+# Use default cross image for Android
