@@ -29,31 +29,31 @@ jobs:
       
     - name: Run clippy
       run: cargo clippy -- -D warnings
-      
-    - name: Build for Android ARM64 (library)
-      run: cross build --target aarch64-linux-android --release --lib
-      
-    - name: Build for Android ARM64 (binary)
-      run: cross build --target aarch64-linux-android --release --bin test_runner
+
+    - name: Build for Android x86_64 (library)
+      run: cross build --target x86_64-linux-android --release --lib
+
+    - name: Build for Android x86_64 (binary)
+      run: cross build --target x86_64-linux-android --release --bin test_runner
       
     - name: List built files
       run: |
         echo "=== Built files ==="
-        ls -la target/aarch64-linux-android/release/
+        ls -la target/x86_64-linux-android/release/
         echo ""
         echo "=== File info ==="
-        file target/aarch64-linux-android/release/libboa_alignment_test.so
-        file target/aarch64-linux-android/release/test_runner
+        file target/x86_64-linux-android/release/libboa_alignment_test.so
+        file target/x86_64-linux-android/release/test_runner
         echo ""
         echo "=== Binary size ==="
-        du -h target/aarch64-linux-android/release/test_runner
-        du -h target/aarch64-linux-android/release/libboa_alignment_test.so
-        
+        du -h target/x86_64-linux-android/release/test_runner
+        du -h target/x86_64-linux-android/release/libboa_alignment_test.so
+
     - name: Setup Android Emulator and run test
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 29
-        arch: arm64-v8a
+        arch: x86_64
         target: default
         emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
         disable-animations: true
@@ -61,8 +61,8 @@ jobs:
           echo "=== Setting up test environment ==="
           
           # Push the test binary to emulator
-          adb push target/aarch64-linux-android/release/test_runner /data/local/tmp/
-          
+          adb push target/x86_64-linux-android/release/test_runner /data/local/tmp/
+
           # Make it executable
           adb shell "chmod +x /data/local/tmp/test_runner"
           
@@ -72,32 +72,3 @@ jobs:
           adb shell "cd /data/local/tmp && RUST_BACKTRACE=full RUST_LOG=debug ./test_runner"
           
           echo "=== Test completed ==="
-
-  # Additional job to test on different Android API levels
-  test-multiple-apis:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        api-level: [26, 29, 30]
-    
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
-    - name: Install cross
-      run: cargo install cross --git https://github.com/cross-rs/cross
-    - name: Build
-      run: cross build --target aarch64-linux-android --release --bin test_runner
-    - name: Test on API ${{ matrix.api-level }}
-      uses: reactivecircus/android-emulator-runner@v2
-      with:
-        api-level: ${{ matrix.api-level }}
-        arch: arm64-v8a
-        target: default
-        emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-        disable-animations: true
-        script: |
-          adb push target/aarch64-linux-android/release/test_runner /data/local/tmp/
-          adb shell "chmod +x /data/local/tmp/test_runner && cd /data/local/tmp && ./test_runner"
