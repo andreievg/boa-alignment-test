@@ -111,7 +111,7 @@ pub fn stress_test_boa() -> i32 {
 
     match context.eval(source) {
         Ok(result) => {
-            println!("✓ Stress test passed: created {} objects", result);
+            println!("✓ Stress test passed: created {:?} objects", result);
             0
         }
         Err(e) => {
