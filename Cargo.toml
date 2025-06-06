@@ -1,0 +1,14 @@
+[package]
+name = "boa-alignment-test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+boa_engine = "0.18" # or whatever version you're using
+
+[lib]
+crate-type = ["cdylib"]
+
+[[bin]]
+name = "test_runner"
+path = "src/main.rs"
