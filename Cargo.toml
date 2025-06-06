@@ -8,3 +8,7 @@ boa_engine = "0.20" # or whatever version you're using
 
 [lib]
 crate-type = ["cdylib"]
+
+[[bin]]
+name = "test_runner"
+path = "src/main.rs"
