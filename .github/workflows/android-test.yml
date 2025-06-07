@@ -1,4 +1,4 @@
-name: Android ARM64 Test
+name: Android ARM64 Test (No Emulator)
 
 on: [push, pull_request]
 
@@ -26,10 +26,9 @@ jobs:
       with:
         name: android-arm64-binaries
         path: target/aarch64-linux-android/release/test_runner
-        retention-days: 7
 
-  test-emulator:
-    runs-on: macos-latest
+  test-arm64-direct:
+    runs-on: ubuntu-latest
     needs: build-arm64
     steps:
     - name: Download build artifacts
@@ -38,36 +37,17 @@ jobs:
         name: android-arm64-binaries
         path: ./binaries/
         
-    - name: Make executable
-      run: chmod +x binaries/test_runner
-        
-    - name: Setup Android Emulator (Software Emulation)
-      uses: reactivecircus/android-emulator-runner@v2
+    - name: Set up QEMU for ARM64 emulation
+      uses: docker/setup-qemu-action@v2
       with:
-        api-level: 30
-        arch: arm64-v8a
-        target: google_apis
-        # Disable hardware acceleration and use software emulation
-        emulator-options: >-
-          -no-snapshot-save
-          -no-window
-          -gpu swiftshader_indirect
-          -noaudio
-          -no-boot-anim
-          -camera-back none
-          -accel off
-          -qemu -machine virt
-        disable-animations: true
-        # Increase timeout since software emulation is slower
-        emulator-build: 7425822
-        script: |
-          echo "=== Waiting for emulator to fully boot ==="
-          adb wait-for-device
-          adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done;'
-          
-          echo "=== Pushing test binary ==="
-          adb push binaries/test_runner /data/local/tmp/
-          adb shell "chmod +x /data/local/tmp/test_runner"
-          
-          echo "=== Running test ==="
-          adb shell "cd /data/local/tmp && ./test_runner"
+        platforms: arm64
+        
+    - name: Test ARM64 binary directly
+      run: |
+        chmod +x binaries/test_runner
+        
+        # Run directly with QEMU user mode emulation
+        docker run --rm --platform linux/arm64 \
+          -v $(pwd)/binaries:/app \
+          ubuntu:22.04 \
+          /app/test_runner
