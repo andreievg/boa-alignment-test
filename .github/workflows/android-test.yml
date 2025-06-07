@@ -29,7 +29,7 @@ jobs:
   #       retention-days: 7
 
   test-emulator:
-    runs-on: ubuntu-latest
+    runs-on: macos-14
     # needs: ubuntu-latest
     steps:
     # - name: Download build artifacts
@@ -40,18 +40,13 @@ jobs:
         
     # - name: Make executable
     #   run: chmod +x binaries/test_runner
-    - name: Enable KVM group perms
-      run: |
-        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-        sudo udevadm control --reload-rules
-        sudo udevadm trigger --name-match=kvm
 
     - name: Setup Android Emulator (Software Emulation)
       uses: reactivecircus/android-emulator-runner@v2.34.0
       with:
         api-level: 30
         arch: arm64-v8a
-        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot-save
+        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -qemu -machine virt
         script: |
           echo "=== Waiting for emulator to fully boot ==="
           adb wait-for-device
