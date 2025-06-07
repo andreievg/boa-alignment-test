@@ -92,36 +92,81 @@ jobs:
           --force \
           --device "pixel_xl"
 
+    - name: Debug environment before starting emulator
+      run: |
+        echo "=== Environment check ==="
+        echo "ANDROID_HOME: $ANDROID_HOME"
+        echo "PATH: $PATH"
+        
+        echo "=== Available emulators ==="
+        emulator -list-avds
+        
+        echo "=== AVD details ==="
+        cat ~/.android/avd/test_avd.avd/config.ini || echo "No config found"
+        
+        echo "=== ADB version ==="
+        adb version
+        
+        echo "=== Current ADB devices ==="
+        adb devices
+
+    - name: Start ADB server
+      run: |
+        echo "Starting ADB server..."
+        adb kill-server
+        adb start-server
+        sleep 2
+
     - name: Start emulator in background
       run: |
+        echo "Starting emulator..."
         nohup emulator -avd test_avd \
           -no-window -no-audio -no-boot-anim \
           -gpu swiftshader_indirect \
-          -memory 3072 -cores 2 \
+          -memory 2048 -cores 2 \
           -camera-back none -camera-front none \
-          -netdelay none -netspeed full > emulator.log 2>&1 &
+          -wipe-data \
+          -verbose > emulator.log 2>&1 &
         
-        echo "Emulator started in background"
+        echo "Emulator started in background with PID: $!"
+        
+        # Give emulator a moment to initialize
+        sleep 10
 
     - name: Wait for emulator to start
       run: |
         echo "Waiting for emulator to start..."
         
-        # Wait for device to be detected (max 5 minutes)
+        # Check emulator logs first
+        echo "=== Initial emulator logs ==="
+        head -20 emulator.log || echo "No logs yet"
+        
+        # Wait for device to be detected (max 8 minutes)
         COUNTER=0
-        until adb devices | grep -q "emulator" || [ $COUNTER -eq 60 ]; do 
-          echo "Waiting for emulator device... ($COUNTER/60)"; 
+        until adb devices | grep -q "emulator" || [ $COUNTER -eq 96 ]; do 
+          if [ $((COUNTER % 6)) -eq 0 ]; then
+            echo "Waiting for emulator device... ($COUNTER/96) - $(date)"
+            echo "Current ADB devices:"
+            adb devices
+            echo "Emulator processes:"
+            ps aux | grep emulator || echo "No emulator processes found"
+          fi
           sleep 5;
           COUNTER=$((COUNTER + 1))
         done
         
-        if [ $COUNTER -eq 60 ]; then
+        if [ $COUNTER -eq 96 ]; then
           echo "Timeout waiting for emulator device"
+          echo "=== Final emulator logs ==="
+          tail -50 emulator.log || echo "No logs found"
           exit 1
         fi
         
+        echo "Emulator device detected!"
+        
         # Wait for device to be ready
         adb wait-for-device
+        echo "ADB connected to device"
         
         # Wait for boot to complete (max 5 minutes)
         COUNTER=0
