@@ -46,6 +46,7 @@ jobs:
       with:
         api-level: 30
         arch: arm64-v8a
+        force-avd-creation: false
         emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
         script: |
           echo "=== Waiting for emulator to fully boot ==="
