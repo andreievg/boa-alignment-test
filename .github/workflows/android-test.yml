@@ -120,64 +120,93 @@ jobs:
     - name: Start emulator in background
       run: |
         echo "Starting emulator..."
+        
+        # Start emulator with more conservative settings
         nohup emulator -avd test_avd \
           -no-window -no-audio -no-boot-anim \
-          -gpu swiftshader_indirect \
-          -memory 2048 -cores 2 \
-          -camera-back none -camera-front none \
+          -gpu auto \
+          -memory 1024 \
+          -partition-size 2048 \
+          -no-snapshot \
           -wipe-data \
-          -verbose > emulator.log 2>&1 &
+          -verbose \
+          -show-kernel > emulator.log 2>&1 &
         
-        echo "Emulator started in background with PID: $!"
+        EMULATOR_PID=$!
+        echo "Emulator started in background with PID: $EMULATOR_PID"
         
-        # Give emulator a moment to initialize
-        sleep 10
+        # Give emulator more time to initialize  
+        sleep 15
+        
+        # Check if emulator process is still running
+        if kill -0 $EMULATOR_PID 2>/dev/null; then
+          echo "Emulator process is running"
+        else
+          echo "Emulator process died, checking logs..."
+          cat emulator.log
+          exit 1
+        fi
 
     - name: Wait for emulator to start
       run: |
         echo "Waiting for emulator to start..."
         
-        # Check emulator logs first
-        echo "=== Initial emulator logs ==="
-        head -20 emulator.log || echo "No logs yet"
+        # Show more emulator logs
+        echo "=== Current emulator logs ==="
+        tail -30 emulator.log || echo "No logs yet"
         
-        # Wait for device to be detected (max 8 minutes)
+        # Check if qemu process is running
+        echo "=== QEMU processes ==="
+        ps aux | grep qemu | grep -v grep || echo "No QEMU processes found"
+        
+        # Wait for device to be detected (max 10 minutes with more frequent checks)
         COUNTER=0
-        until adb devices | grep -q "emulator" || [ $COUNTER -eq 96 ]; do 
-          if [ $((COUNTER % 6)) -eq 0 ]; then
-            echo "Waiting for emulator device... ($COUNTER/96) - $(date)"
-            echo "Current ADB devices:"
-            adb devices
-            echo "Emulator processes:"
-            ps aux | grep emulator || echo "No emulator processes found"
+        until adb devices | grep -E "(emulator|device)" || [ $COUNTER -eq 120 ]; do 
+          if [ $((COUNTER % 10)) -eq 0 ]; then
+            echo "Waiting for emulator device... ($COUNTER/120) - $(date)"
+            echo "=== ADB devices ==="
+            adb devices -l
+            echo "=== Recent emulator logs ==="
+            tail -10 emulator.log 2>/dev/null || echo "No recent logs"
+            echo "=== Emulator processes ==="
+            ps aux | grep -E "(emulator|qemu)" | grep -v grep || echo "No emulator processes"
           fi
           sleep 5;
           COUNTER=$((COUNTER + 1))
         done
         
-        if [ $COUNTER -eq 96 ]; then
+        if [ $COUNTER -eq 120 ]; then
           echo "Timeout waiting for emulator device"
           echo "=== Final emulator logs ==="
-          tail -50 emulator.log || echo "No logs found"
+          cat emulator.log || echo "No logs found"
+          echo "=== Final process check ==="
+          ps aux | grep -E "(emulator|qemu)" | grep -v grep || echo "No processes"
           exit 1
         fi
         
         echo "Emulator device detected!"
         
         # Wait for device to be ready
+        echo "Waiting for ADB connection..."
         adb wait-for-device
         echo "ADB connected to device"
         
         # Wait for boot to complete (max 5 minutes)
+        echo "Waiting for Android boot to complete..."
         COUNTER=0
         until adb shell getprop sys.boot_completed 2>/dev/null | grep -q "1" || [ $COUNTER -eq 30 ]; do 
-          echo "Waiting for boot to complete... ($COUNTER/30)"; 
+          if [ $((COUNTER % 3)) -eq 0 ]; then
+            echo "Boot progress... ($COUNTER/30)"
+            adb shell getprop sys.boot_completed 2>/dev/null || echo "Boot prop not available yet"
+          fi
           sleep 10;
           COUNTER=$((COUNTER + 1))
         done
         
         if [ $COUNTER -eq 30 ]; then
           echo "Timeout waiting for boot to complete"
+          echo "=== Final device state ==="
+          adb shell getprop || echo "Cannot get properties"
           exit 1
         fi
         
