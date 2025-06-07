@@ -1,4 +1,4 @@
-name: Android ARM64 Test
+name: Android ARM64 Test (macOS 15)
 
 on: [push, pull_request]
 
@@ -29,7 +29,7 @@ jobs:
         retention-days: 7
 
   test-emulator:
-    runs-on: ubuntu-24.04-arm64  # Use ARM64 Ubuntu runner
+    runs-on: macos-15  # Use macOS 15 ARM64 runner
     needs: build-arm64
     steps:
     - name: Download build artifacts
@@ -48,37 +48,80 @@ jobs:
         java-version: '17'
 
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-      
-    - name: Accept Android SDK licenses
-      run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-
-    - name: Install Android system image
       run: |
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "system-images;android-30;default;arm64-v8a"
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools"
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "emulator"
+        # Install Android SDK
+        brew install android-commandlinetools
+        
+        # Set environment variables
+        export ANDROID_HOME=$HOME/Library/Android/sdk
+        export ANDROID_SDK_ROOT=$ANDROID_HOME
+        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator
+        
+        # Create SDK directory structure
+        mkdir -p $ANDROID_HOME/cmdline-tools
+        
+        # Move cmdline-tools to proper location if needed
+        if [ -d "/opt/homebrew/share/android-commandlinetools" ]; then
+          cp -r /opt/homebrew/share/android-commandlinetools/* $ANDROID_HOME/cmdline-tools/
+        fi
+        
+        echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+        echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+        echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+        echo "$ANDROID_HOME/emulator" >> $GITHUB_PATH
+
+    - name: Accept Android SDK licenses and install components
+      run: |
+        # Accept licenses
+        yes | sdkmanager --licenses || true
+        
+        # Install required components
+        sdkmanager "platform-tools"
+        sdkmanager "emulator"
+        sdkmanager "system-images;android-30;default;arm64-v8a"
+        
+        # List installed packages
+        sdkmanager --list_installed
 
     - name: Create AVD
       run: |
-        echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd \
+        echo "no" | avdmanager create avd \
           -n test_avd \
           -k "system-images;android-30;default;arm64-v8a" \
-          --force
+          --force \
+          --device "pixel_xl"
 
     - name: Start emulator in background
       run: |
-        nohup $ANDROID_HOME/emulator/emulator -avd test_avd \
-          -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect \
-          -memory 2048 -cores 2 > emulator.log 2>&1 &
+        nohup emulator -avd test_avd \
+          -no-window -no-audio -no-boot-anim \
+          -gpu swiftshader_indirect \
+          -memory 3072 -cores 2 \
+          -camera-back none -camera-front none \
+          -netdelay none -netspeed full > emulator.log 2>&1 &
         
+        echo "Emulator started in background"
+
     - name: Wait for emulator to start
       run: |
         echo "Waiting for emulator to start..."
-        timeout 300 bash -c 'until adb shell getprop sys.boot_completed | grep -q "1"; do 
-          echo "Still waiting for emulator..."; 
+        
+        # Wait for device to be detected
+        timeout 300 bash -c 'until adb devices | grep -q "emulator"; do 
+          echo "Waiting for emulator device..."; 
+          sleep 5; 
+        done'
+        
+        # Wait for device to be ready
+        adb wait-for-device
+        
+        # Wait for boot to complete
+        timeout 300 bash -c 'until adb shell getprop sys.boot_completed 2>/dev/null | grep -q "1"; do 
+          echo "Waiting for boot to complete..."; 
           sleep 10; 
         done'
+        
         echo "Emulator is ready!"
 
     - name: Test emulator and run binary
@@ -87,6 +130,10 @@ jobs:
         adb shell getprop ro.product.cpu.abi
         adb shell getprop ro.build.version.release
         adb shell getprop ro.hardware
+        adb shell uname -m
+        
+        echo "=== System info ==="
+        adb shell cat /proc/cpuinfo | head -10
         
         echo "=== Pushing test binary ==="
         adb push binaries/test_runner /data/local/tmp/
@@ -107,3 +154,6 @@ jobs:
         
         echo "=== ADB devices ==="
         adb devices -l
+        
+        echo "=== AVD list ==="
+        avdmanager list avd
