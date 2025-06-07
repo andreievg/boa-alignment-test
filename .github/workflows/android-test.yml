@@ -3,55 +3,107 @@ name: Android ARM64 Test
 on: [push, pull_request]
 
 jobs:
-  # build-arm64:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Checkout code
-  #     uses: actions/checkout@v4
+  build-arm64:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
     
-  #   - name: Install Rust
-  #     uses: actions-rs/toolchain@v1
-  #     with:
-  #       toolchain: stable
-  #       override: true
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
         
-  #   - name: Install cross
-  #     run: cargo install cross --git https://github.com/cross-rs/cross
+    - name: Install cross
+      run: cargo install cross --git https://github.com/cross-rs/cross
       
-  #   - name: Build ARM64 binary
-  #     run: cross build --target aarch64-linux-android --release --bin test_runner
+    - name: Build ARM64 binary
+      run: cross build --target aarch64-linux-android --release --bin test_runner
       
-  #   - name: Upload build artifacts
-  #     uses: actions/upload-artifact@v4
-  #     with:
-  #       name: android-arm64-binaries
-  #       path: target/aarch64-linux-android/release/test_runner
-  #       retention-days: 7
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-arm64-binaries
+        path: target/aarch64-linux-android/release/test_runner
+        retention-days: 7
 
   test-emulator:
-    runs-on: ubuntu-24.04-arm
-    # needs: ubuntu-latest
+    runs-on: ubuntu-24.04-arm64  # Use ARM64 Ubuntu runner
+    needs: build-arm64
     steps:
-    # - name: Download build artifacts
-    #   uses: actions/download-artifact@v4
-    #   with:
-    #     name: android-arm64-binaries
-    #     path: ./binaries/
-        
-    # - name: Make executable
-    #   run: chmod +x binaries/test_runner
-
-    - name: Setup Android Emulator (Software Emulation)
-      uses: reactivecircus/android-emulator-runner@v2
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
       with:
-        api-level: 29
-        arch: arm64-v8a
-        script: |
-          echo "=== Waiting for emulator to fully boot ==="
-          adb wait-for-device
-          adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done;'
-          
-          echo "=== Pushing test binary ==="
-          
-          echo "=== Running test ==="
-          adb shell ls
+        name: android-arm64-binaries
+        path: ./binaries/
+        
+    - name: Make executable
+      run: chmod +x binaries/test_runner
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Accept Android SDK licenses
+      run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+    - name: Install Android system image
+      run: |
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "system-images;android-30;default;arm64-v8a"
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools"
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "emulator"
+
+    - name: Create AVD
+      run: |
+        echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd \
+          -n test_avd \
+          -k "system-images;android-30;default;arm64-v8a" \
+          --force
+
+    - name: Start emulator in background
+      run: |
+        nohup $ANDROID_HOME/emulator/emulator -avd test_avd \
+          -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect \
+          -memory 2048 -cores 2 > emulator.log 2>&1 &
+        
+    - name: Wait for emulator to start
+      run: |
+        echo "Waiting for emulator to start..."
+        timeout 300 bash -c 'until adb shell getprop sys.boot_completed | grep -q "1"; do 
+          echo "Still waiting for emulator..."; 
+          sleep 10; 
+        done'
+        echo "Emulator is ready!"
+
+    - name: Test emulator and run binary
+      run: |
+        echo "=== Device info ==="
+        adb shell getprop ro.product.cpu.abi
+        adb shell getprop ro.build.version.release
+        adb shell getprop ro.hardware
+        
+        echo "=== Pushing test binary ==="
+        adb push binaries/test_runner /data/local/tmp/
+        adb shell chmod 755 /data/local/tmp/test_runner
+        
+        echo "=== Testing binary ==="
+        adb shell ls -la /data/local/tmp/test_runner
+        adb shell file /data/local/tmp/test_runner
+        
+        echo "=== Running test ==="
+        adb shell /data/local/tmp/test_runner
+
+    - name: Show emulator logs on failure
+      if: failure()
+      run: |
+        echo "=== Emulator logs ==="
+        cat emulator.log || echo "No emulator logs found"
+        
+        echo "=== ADB devices ==="
+        adb devices -l
