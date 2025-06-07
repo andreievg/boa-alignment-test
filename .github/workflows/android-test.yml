@@ -44,7 +44,7 @@ jobs:
     - name: Setup Android Emulator (Software Emulation)
       uses: reactivecircus/android-emulator-runner@v2
       with:
-        api-level: 29
+        api-level: 30
         arch: arm64-v8a
         script: |
           echo "=== Waiting for emulator to fully boot ==="
