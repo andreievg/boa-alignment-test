@@ -107,20 +107,34 @@ jobs:
       run: |
         echo "Waiting for emulator to start..."
         
-        # Wait for device to be detected
-        timeout 300 bash -c 'until adb devices | grep -q "emulator"; do 
-          echo "Waiting for emulator device..."; 
-          sleep 5; 
-        done'
+        # Wait for device to be detected (max 5 minutes)
+        COUNTER=0
+        until adb devices | grep -q "emulator" || [ $COUNTER -eq 60 ]; do 
+          echo "Waiting for emulator device... ($COUNTER/60)"; 
+          sleep 5;
+          COUNTER=$((COUNTER + 1))
+        done
+        
+        if [ $COUNTER -eq 60 ]; then
+          echo "Timeout waiting for emulator device"
+          exit 1
+        fi
         
         # Wait for device to be ready
         adb wait-for-device
         
-        # Wait for boot to complete
-        timeout 300 bash -c 'until adb shell getprop sys.boot_completed 2>/dev/null | grep -q "1"; do 
-          echo "Waiting for boot to complete..."; 
-          sleep 10; 
-        done'
+        # Wait for boot to complete (max 5 minutes)
+        COUNTER=0
+        until adb shell getprop sys.boot_completed 2>/dev/null | grep -q "1" || [ $COUNTER -eq 30 ]; do 
+          echo "Waiting for boot to complete... ($COUNTER/30)"; 
+          sleep 10;
+          COUNTER=$((COUNTER + 1))
+        done
+        
+        if [ $COUNTER -eq 30 ]; then
+          echo "Timeout waiting for boot to complete"
+          exit 1
+        fi
         
         echo "Emulator is ready!"
 
