@@ -44,7 +44,7 @@ jobs:
         retention-days: 7
 
   test-emulator:
-    runs-on: ubuntu-24.04-arm
+    runs-on: macos-latest
     needs: build-arm64
     steps:
     - name: Checkout code
