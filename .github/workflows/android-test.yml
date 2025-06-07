@@ -1,35 +1,36 @@
-name: Android ARM64 Test (No Emulator)
+name: Android ARM64 Test
 
 on: [push, pull_request]
 
 jobs:
-  build-arm64:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+  # build-arm64:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
     
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
+  #   - name: Install Rust
+  #     uses: actions-rs/toolchain@v1
+  #     with:
+  #       toolchain: stable
+  #       override: true
         
-    - name: Install cross
-      run: cargo install cross --git https://github.com/cross-rs/cross
+  #   - name: Install cross
+  #     run: cargo install cross --git https://github.com/cross-rs/cross
       
-    - name: Build ARM64 binary
-      run: cross build --target aarch64-linux-android --release --bin test_runner
+  #   - name: Build ARM64 binary
+  #     run: cross build --target aarch64-linux-android --release --bin test_runner
       
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: android-arm64-binaries
-        path: target/aarch64-linux-android/release/test_runner
+  #   - name: Upload build artifacts
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: android-arm64-binaries
+  #       path: target/aarch64-linux-android/release/test_runner
+  #       retention-days: 7
 
-  test-arm64-direct:
-    runs-on: ubuntu-latest
-    needs: build-arm64
+  test-emulator:
+    runs-on: macos-latest
+    needs: ubuntu-latest
     steps:
     - name: Download build artifacts
       uses: actions/download-artifact@v4
@@ -37,17 +38,22 @@ jobs:
         name: android-arm64-binaries
         path: ./binaries/
         
-    - name: Set up QEMU for ARM64 emulation
-      uses: docker/setup-qemu-action@v2
+    - name: Make executable
+      run: chmod +x binaries/test_runner
+        
+    - name: Setup Android Emulator (Software Emulation)
+      uses: ReactiveCircus/android-emulator-runner@v2.30.1
       with:
-        platforms: arm64
-        
-    - name: Test ARM64 binary directly
-      run: |
-        chmod +x binaries/test_runner
-        
-        # Run directly with QEMU user mode emulation
-        docker run --rm --platform linux/arm64 \
-          -v $(pwd)/binaries:/app \
-          ubuntu:22.04 \
-          /app/test_runner
+        api-level: 24
+        arch: arm64-v8a
+        script: |
+          echo "=== Waiting for emulator to fully boot ==="
+          adb wait-for-device
+          adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done;'
+          
+          echo "=== Pushing test binary ==="
+          adb push binaries/test_runner /data/local/tmp/
+          adb shell "chmod +x /data/local/tmp/test_runner"
+          
+          echo "=== Running test ==="
+          adb shell "cd /data/local/tmp && ./test_runner"
