@@ -1,0 +1,8 @@
+[build.env]
+passthrough = [
+    "RUST_LOG",
+    "RUST_BACKTRACE"
+]
+
+[target.aarch64-linux-android]
+# Use default cross image for Android
