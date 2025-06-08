@@ -36,7 +36,7 @@ dependencies = [
 [[package]]
 name = "boa_ast"
 version = "0.20.0"
-source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
+source = "git+https://github.com/boa-dev/boa.git?rev=12faecadac542476fb1474dbc773d91f3b6705a0#12faecadac542476fb1474dbc773d91f3b6705a0"
 dependencies = [
  "bitflags",
  "boa_interner",
@@ -50,7 +50,7 @@ dependencies = [
 [[package]]
 name = "boa_engine"
 version = "0.20.0"
-source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
+source = "git+https://github.com/boa-dev/boa.git?rev=12faecadac542476fb1474dbc773d91f3b6705a0#12faecadac542476fb1474dbc773d91f3b6705a0"
 dependencies = [
  "arrayvec",
  "bitflags",
@@ -63,10 +63,8 @@ dependencies = [
  "boa_string",
  "bytemuck",
  "cfg-if",
- "cow-utils",
  "dashmap",
  "fast-float2",
- "futures-lite",
  "hashbrown 0.15.3",
  "icu_normalizer",
  "indexmap",
@@ -76,16 +74,17 @@ dependencies = [
  "num-integer",
  "num-traits",
  "num_enum",
- "paste",
+ "once_cell",
+ "pollster",
  "portable-atomic",
- "rand 0.9.1",
+ "rand",
  "regress",
  "rustc-hash",
  "ryu-js",
  "serde",
  "serde_json",
+ "sptr",
  "static_assertions",
- "tag_ptr",
  "tap",
  "thin-vec",
  "thiserror",
@@ -95,7 +94,7 @@ dependencies = [
 [[package]]
 name = "boa_gc"
 version = "0.20.0"
-source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
+source = "git+https://github.com/boa-dev/boa.git?rev=12faecadac542476fb1474dbc773d91f3b6705a0#12faecadac542476fb1474dbc773d91f3b6705a0"
 dependencies = [
  "boa_macros",
  "boa_profiler",
@@ -107,7 +106,7 @@ dependencies = [
 [[package]]
 name = "boa_interner"
 version = "0.20.0"
-source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
+source = "git+https://github.com/boa-dev/boa.git?rev=12faecadac542476fb1474dbc773d91f3b6705a0#12faecadac542476fb1474dbc773d91f3b6705a0"
 dependencies = [
  "boa_gc",
  "boa_macros",
@@ -122,10 +121,8 @@ dependencies = [
 [[package]]
 name = "boa_macros"
 version = "0.20.0"
-source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
+source = "git+https://github.com/boa-dev/boa.git?rev=12faecadac542476fb1474dbc773d91f3b6705a0#12faecadac542476fb1474dbc773d91f3b6705a0"
 dependencies = [
- "cfg-if",
- "cow-utils",
  "proc-macro2",
  "quote",
  "syn",
@@ -135,7 +132,7 @@ dependencies = [
 [[package]]
 name = "boa_parser"
 version = "0.20.0"
-source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
+source = "git+https://github.com/boa-dev/boa.git?rev=12faecadac542476fb1474dbc773d91f3b6705a0#12faecadac542476fb1474dbc773d91f3b6705a0"
 dependencies = [
  "bitflags",
  "boa_ast",
@@ -153,20 +150,20 @@ dependencies = [
 [[package]]
 name = "boa_profiler"
 version = "0.20.0"
-source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
+source = "git+https://github.com/boa-dev/boa.git?rev=12faecadac542476fb1474dbc773d91f3b6705a0#12faecadac542476fb1474dbc773d91f3b6705a0"
 
 [[package]]
 name = "boa_string"
 version = "0.20.0"
-source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
+source = "git+https://github.com/boa-dev/boa.git?rev=12faecadac542476fb1474dbc773d91f3b6705a0#12faecadac542476fb1474dbc773d91f3b6705a0"
 dependencies = [
  "fast-float2",
  "itoa",
  "paste",
  "rustc-hash",
  "ryu-js",
+ "sptr",
  "static_assertions",
- "tag_ptr",
 ]
 
 [[package]]
@@ -200,12 +197,6 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
-
-[[package]]
-name = "cow-utils"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "417bef24afe1460300965a25ff4a24b8b45ad011948302ec221e8a0a81eb2c79"
 
 [[package]]
 name = "crossbeam-utils"
@@ -266,51 +257,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8eb564c5c7423d25c886fb561d1e4ee69f72354d16918afa32c08811f6b6a55"
 
 [[package]]
-name = "fastrand"
-version = "2.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
-
-[[package]]
 name = "foldhash"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 
 [[package]]
-name = "futures-core"
-version = "0.3.31"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05f29059c0c2090612e8d742178b0580d2dc940c837851ad723096f87af6663e"
-
-[[package]]
-name = "futures-io"
-version = "0.3.31"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e5c1b78ca4aae1ac06c48a526a655760685149f0d465d21f37abfe57ce075c6"
-
-[[package]]
-name = "futures-lite"
-version = "2.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5edaec856126859abb19ed65f39e90fea3a9574b9707f13539acf4abf7eb532"
-dependencies = [
- "fastrand",
- "futures-core",
- "futures-io",
- "parking",
- "pin-project-lite",
-]
-
-[[package]]
 name = "getrandom"
-version = "0.3.3"
+version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26145e563e54f2cadc477553f1ec5ee650b00862f0a58bcd12cbdc5f0ea2d2f4"
+checksum = "335ff9f135e4384c8150d6f27c6daed433577f86b4750418338c01a1a2528592"
 dependencies = [
  "cfg-if",
  "libc",
- "r-efi",
  "wasi",
 ]
 
@@ -470,9 +429,9 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.14.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
 dependencies = [
  "either",
 ]
@@ -608,12 +567,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
 
 [[package]]
-name = "parking"
-version = "2.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f38d5652c16fde515bb1ecef450ab0f6a219d619a7274976324d5e377f7dceba"
-
-[[package]]
 name = "parking_lot_core"
 version = "0.9.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -649,7 +602,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c80231409c20246a13fddb31776fb942c38553c51e871f8cbd687a4cfb5843d"
 dependencies = [
  "phf_shared",
- "rand 0.8.5",
+ "rand",
 ]
 
 [[package]]
@@ -675,10 +628,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "pin-project-lite"
-version = "0.2.16"
+name = "pollster"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b3cff922bd51709b605d9ead9aa71031d81447142d828eb4a6eba76fe619f9b"
+checksum = "2f3a9f18d041e6d0e102a0a46750538147e5e8992d3b4873aaafee2520b00ce3"
 
 [[package]]
 name = "portable-atomic"
@@ -729,38 +682,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "r-efi"
-version = "5.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74765f6d916ee2faa39bc8e68e4f3ed8949b48cccdac59983d287a7cb71ce9c5"
-
-[[package]]
 name = "rand"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
 dependencies = [
- "rand_core 0.6.4",
-]
-
-[[package]]
-name = "rand"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fbfd9d094a40bf3ae768db9361049ace4c0e04a4fd6b359518bd7b73a73dd97"
-dependencies = [
+ "libc",
  "rand_chacha",
- "rand_core 0.9.3",
+ "rand_core",
 ]
 
 [[package]]
 name = "rand_chacha"
-version = "0.9.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3022b5f1df60f26e1ffddd6c66e8aa15de382ae63b3a0c1bfc0e4d3e3f325cb"
+checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
 dependencies = [
  "ppv-lite86",
- "rand_core 0.9.3",
+ "rand_core",
 ]
 
 [[package]]
@@ -768,12 +707,6 @@ name = "rand_core"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
-
-[[package]]
-name = "rand_core"
-version = "0.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38"
 dependencies = [
  "getrandom",
 ]
@@ -866,6 +799,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8917285742e9f3e1683f0a9c4e6b57960b7314d0b08d30d1ecd426713ee2eee9"
 
 [[package]]
+name = "sptr"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b9b39299b249ad65f3b7e96443bad61c02ca5cd3589f46cb6d610a0fd6c0d6a"
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -898,11 +837,6 @@ dependencies = [
  "quote",
  "syn",
 ]
-
-[[package]]
-name = "tag_ptr"
-version = "0.1.0"
-source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
 
 [[package]]
 name = "tap"
@@ -1017,12 +951,9 @@ checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
 
 [[package]]
 name = "wasi"
-version = "0.14.2+wasi-0.2.4"
+version = "0.11.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9683f9a5a998d873c0d21fcbe3c083009670149a8fab228644b8bd36b2c48cb3"
-dependencies = [
- "wit-bindgen-rt",
-]
+checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 
 [[package]]
 name = "wasm-bindgen"
@@ -1152,15 +1083,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c06928c8748d81b05c9be96aad92e1b6ff01833332f281e8cfca3be4b35fc9ec"
 dependencies = [
  "memchr",
-]
-
-[[package]]
-name = "wit-bindgen-rt"
-version = "0.39.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f42320e61fe2cfd34354ecb597f86f413484a798ba44a8ca1165c58d42da6c1"
-dependencies = [
- "bitflags",
 ]
 
 [[package]]
