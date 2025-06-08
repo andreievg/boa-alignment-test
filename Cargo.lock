@@ -36,7 +36,7 @@ dependencies = [
 [[package]]
 name = "boa_ast"
 version = "0.20.0"
-source = "git+https://github.com/boa-dev/boa.git#9730a400d049c4dc16d103e1a55c16ef3a4aa9e9"
+source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
 dependencies = [
  "bitflags",
  "boa_interner",
@@ -50,7 +50,7 @@ dependencies = [
 [[package]]
 name = "boa_engine"
 version = "0.20.0"
-source = "git+https://github.com/boa-dev/boa.git#9730a400d049c4dc16d103e1a55c16ef3a4aa9e9"
+source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
 dependencies = [
  "arrayvec",
  "bitflags",
@@ -95,7 +95,7 @@ dependencies = [
 [[package]]
 name = "boa_gc"
 version = "0.20.0"
-source = "git+https://github.com/boa-dev/boa.git#9730a400d049c4dc16d103e1a55c16ef3a4aa9e9"
+source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
 dependencies = [
  "boa_macros",
  "boa_profiler",
@@ -107,7 +107,7 @@ dependencies = [
 [[package]]
 name = "boa_interner"
 version = "0.20.0"
-source = "git+https://github.com/boa-dev/boa.git#9730a400d049c4dc16d103e1a55c16ef3a4aa9e9"
+source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
 dependencies = [
  "boa_gc",
  "boa_macros",
@@ -122,7 +122,7 @@ dependencies = [
 [[package]]
 name = "boa_macros"
 version = "0.20.0"
-source = "git+https://github.com/boa-dev/boa.git#9730a400d049c4dc16d103e1a55c16ef3a4aa9e9"
+source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
 dependencies = [
  "cfg-if",
  "cow-utils",
@@ -135,7 +135,7 @@ dependencies = [
 [[package]]
 name = "boa_parser"
 version = "0.20.0"
-source = "git+https://github.com/boa-dev/boa.git#9730a400d049c4dc16d103e1a55c16ef3a4aa9e9"
+source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
 dependencies = [
  "bitflags",
  "boa_ast",
@@ -153,12 +153,12 @@ dependencies = [
 [[package]]
 name = "boa_profiler"
 version = "0.20.0"
-source = "git+https://github.com/boa-dev/boa.git#9730a400d049c4dc16d103e1a55c16ef3a4aa9e9"
+source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
 
 [[package]]
 name = "boa_string"
 version = "0.20.0"
-source = "git+https://github.com/boa-dev/boa.git#9730a400d049c4dc16d103e1a55c16ef3a4aa9e9"
+source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
 dependencies = [
  "fast-float2",
  "itoa",
@@ -902,7 +902,7 @@ dependencies = [
 [[package]]
 name = "tag_ptr"
 version = "0.1.0"
-source = "git+https://github.com/boa-dev/boa.git#9730a400d049c4dc16d103e1a55c16ef3a4aa9e9"
+source = "git+https://github.com/andreievg/boa.git#3fcffde29274834eaff49bdc09169007e88d445a"
 
 [[package]]
 name = "tap"

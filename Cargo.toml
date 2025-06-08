@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-boa_engine = { git = "https://github.com/boa-dev/boa.git" }
+boa_engine = { git = "https://github.com/andreievg/boa.git" }
 
 [lib]
 crate-type = ["cdylib", "rlib"]
